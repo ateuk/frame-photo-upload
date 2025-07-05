@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Archived Pictures</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1><a href="/" class="back-arrow">&#8592;</a> Archived Pictures</h1>
+    <div class="banner">
+        <p>Pictures on this page are archived and will not be displayed on the frame</p>
+    </div>
+    <div id="gallery"></div>
+    <div class="loading-overlay" id="gallery-loading-overlay" style="display: none;">
+        <div class="loading-spinner"></div>
+        <p>Generating thumbnails...</p>
+    </div>
+    <script>
+        function loadArchivedImages() {
+            const galleryLoadingOverlay = document.getElementById('gallery-loading-overlay');
+            galleryLoadingOverlay.style.display = 'flex';
+
+            fetch('/archived_pictures')
+                .then(response => response.json())
+                .then(images => {
+                    const gallery = document.getElementById('gallery');
+                    gallery.innerHTML = '';
+                    let imagesLoaded = 0;
+                    const totalImages = images.length;
+
+                    if (totalImages === 0) {
+                        galleryLoadingOverlay.style.display = 'none';
+                        return;
+                    }
+
+                    images.forEach(imageData => {
+                        const thumb = document.createElement('div');
+                        thumb.classList.add('thumbnail');
+                        const img = new Image();
+                        img.src = `/archived_thumbnails/${imageData.thumbnail_filename}?t=${new Date().getTime()}`;
+                        img.alt = imageData.original_filename;
+                        img.onload = () => {
+                            imagesLoaded++;
+                            if (imagesLoaded === totalImages) {
+                                galleryLoadingOverlay.style.display = 'none';
+                            }
+                        };
+                        img.onerror = () => {
+                            imagesLoaded++;
+                            if (imagesLoaded === totalImages) {
+                                galleryLoadingOverlay.style.display = 'none';
+                            }
+                            console.error(`Error loading image: ${imageData.original_filename}`);
+                        };
+
+                        thumb.innerHTML = `
+                            <div class="move-back-btn" data-filename="${imageData.original_filename}">&#x21B6;</div>
+                        `;
+                        thumb.prepend(img); // Add image to the beginning of the thumbnail div
+                        gallery.appendChild(thumb);
+                    });
+                    addMoveButtonListeners();
+                });
+        }
+
+        function addMoveButtonListeners() {
+            document.querySelectorAll('.move-back-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const filename = this.dataset.filename;
+                    fetch('/move_from_archive', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ filename: filename }),
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                loadArchivedImages(); // Refresh the gallery
+                            } else {
+                                alert('Error: ' + data.message);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            alert('An error occurred while moving the image.');
+                        });
+                });
+            });
+        }
+        loadArchivedImages();
+    </script>
+</body>
+</html>

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Living Room Frame</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="header">
+        <h1>🖼️ Living Room Frame</h1>
+        <div class="header-buttons">
+            <button id="view-archived-btn">View archived</button>
+        </div>
+    </div>
+    <div class="banner">
+        <p>The pictures below will be displayed on the living room frame. Every few hours, a picture
+        will be chosen from this set to be displayed.</p>
+    </div>
+    
+    <div id="drop-zone">
+        <p>Drag & drop pictures here or click to select files</p>
+        <input type="file" id="file-input" multiple>
+    </div>
+    <div id="progress-bar"></div>
+    <div class="archive-all-container">
+        <button id="delete-all-btn">Archive all</button>
+    </div>
+    <div id="gallery"></div>
+    <div class="loading-overlay" id="gallery-loading-overlay" style="display: none;">
+        <div class="loading-spinner"></div>
+        <p>Generating thumbnails...</p>
+    </div>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
