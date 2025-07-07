@@ -1,5 +1,6 @@
 const deleteAllBtn = document.getElementById('delete-all-btn');
 const viewArchivedBtn = document.getElementById('view-archived-btn');
+const viewStocksBtn = document.getElementById('view-stocks-btn');
 
 deleteAllBtn.addEventListener('click', () => {
     if (confirm('Are you sure you want to delete all pictures?')) {
@@ -14,6 +15,10 @@ deleteAllBtn.addEventListener('click', () => {
 
 viewArchivedBtn.addEventListener('click', () => {
     window.location.href = '/archived';
+});
+
+viewStocksBtn.addEventListener('click', () => {
+    window.location.href = '/stocks';
 });
 
 const dropZone = document.getElementById('drop-zone');

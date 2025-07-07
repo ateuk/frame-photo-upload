@@ -7,10 +7,12 @@ from PIL import Image
 app = Flask(__name__)
 UPLOAD_FOLDER = 'pictures'
 ARCHIVE_FOLDER = 'pictures/archived'
+STOCKS_FOLDER = 'stocks'
 THUMBNAIL_FOLDER = 'thumbnails'
 ARCHIVED_THUMBNAIL_FOLDER = 'pictures/archived/thumbnails'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['ARCHIVE_FOLDER'] = ARCHIVE_FOLDER
+app.config['STOCKS_FOLDER'] = STOCKS_FOLDER
 app.config['THUMBNAIL_FOLDER'] = THUMBNAIL_FOLDER
 
 def move_to_archive_background():
@@ -31,6 +33,10 @@ def index():
 @app.route('/archived')
 def archived():
     return render_template('archived.html')
+
+@app.route('/stocks')
+def stocks():
+    return render_template('stocks.html')
 
 THUMBNAIL_SIZE = (512, 512)
 
@@ -94,9 +100,14 @@ def list_pictures():
 
 @app.route('/archived_pictures')
 def list_archived_pictures():
-    image_files = os.listdir(app.config['ARCHIVE_FOLDER'])
+    page = request.args.get('page', 1, type=int)
+    per_page = 100
+    image_files = sorted(os.listdir(app.config['ARCHIVE_FOLDER']))
+    start = (page - 1) * per_page
+    end = start + per_page
+    paginated_files = image_files[start:end]
     images_data = []
-    for filename in image_files:
+    for filename in paginated_files:
         original_filepath = os.path.join(app.config['ARCHIVE_FOLDER'], filename)
         thumbnail_filename = os.path.splitext(filename)[0] + ".webp"
         thumbnail_path = os.path.join(app.config['THUMBNAIL_FOLDER'], thumbnail_filename)
@@ -108,6 +119,31 @@ def list_archived_pictures():
                 image.save(thumbnail_path, "WEBP")
             except Exception as e:
                 print(f"Error generating thumbnail for archived {filename}: {e}")
+                continue # Skip this image if thumbnail generation fails
+        images_data.append({'original_filename': filename, 'thumbnail_filename': thumbnail_filename})
+    return jsonify(images_data)
+
+@app.route('/stock_pictures')
+def list_stock_pictures():
+    page = request.args.get('page', 1, type=int)
+    per_page = 100
+    image_files = sorted(os.listdir(app.config['STOCKS_FOLDER']))
+    start = (page - 1) * per_page
+    end = start + per_page
+    paginated_files = image_files[start:end]
+    images_data = []
+    for filename in paginated_files:
+        original_filepath = os.path.join(app.config['STOCKS_FOLDER'], filename)
+        thumbnail_filename = os.path.splitext(filename)[0] + ".webp"
+        thumbnail_path = os.path.join(app.config['THUMBNAIL_FOLDER'], thumbnail_filename)
+
+        if not os.path.exists(thumbnail_path):
+            try:
+                image = Image.open(original_filepath)
+                image.thumbnail(THUMBNAIL_SIZE)
+                image.save(thumbnail_path, "WEBP")
+            except Exception as e:
+                print(f"Error generating thumbnail for stock {filename}: {e}")
                 continue # Skip this image if thumbnail generation fails
         images_data.append({'original_filename': filename, 'thumbnail_filename': thumbnail_filename})
     return jsonify(images_data)
@@ -126,6 +162,10 @@ def get_thumbnail(filename):
 
 @app.route('/archived_thumbnails/<path:filename>')
 def get_archived_thumbnail(filename):
+    return send_from_directory(app.config['THUMBNAIL_FOLDER'], filename)
+
+@app.route('/stock_thumbnails/<path:filename>')
+def get_stock_thumbnail(filename):
     return send_from_directory(app.config['THUMBNAIL_FOLDER'], filename)
 
 @app.route('/delete-all', methods=['DELETE'])
@@ -180,6 +220,23 @@ def move_from_archive():
         return jsonify({'success': True, 'message': f'{filename} moved back to main pictures.'}), 200
     except FileNotFoundError:
         return jsonify({'success': False, 'message': 'File not found in archive'}), 404
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/move_from_stocks', methods=['POST'])
+def move_from_stocks():
+    data = request.get_json()
+    filename = data.get('filename')
+    if not filename:
+        return jsonify({'success': False, 'message': 'No filename provided'}), 400
+
+    try:
+        source_path = os.path.join(app.config['STOCKS_FOLDER'], filename)
+        destination_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        os.rename(source_path, destination_path)
+        return jsonify({'success': True, 'message': f'{filename} moved back to main pictures.'}), 200
+    except FileNotFoundError:
+        return jsonify({'success': False, 'message': 'File not found in stocks'}), 404
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
 

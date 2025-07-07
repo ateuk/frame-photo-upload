@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Archived Pictures</title>
+    <title>Stock Pictures</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <h1><a href="/" class="back-arrow">&#8592;</a> Archived Pictures</h1>
+    <h1><a href="/" class="back-arrow">&#8592;</a> Stock Pictures</h1>
     <div class="banner">
-        <p>Pictures on this page are archived and will not be displayed on the frame</p>
+        <p>Pictures on this page are from the stocks directory and can be moved to the main pictures directory.</p>
     </div>
     <div id="gallery"></div>
     <div id="sentinel"></div>
@@ -25,15 +25,15 @@
         const galleryLoadingOverlay = document.getElementById('gallery-loading-overlay');
         const sentinel = document.getElementById('sentinel');
 
-        async function loadArchivedImages() {
+        async function loadStockImages() {
             if (isLoading || noMoreImages) return;
             isLoading = true;
             galleryLoadingOverlay.style.display = 'flex';
 
             try {
-                const response = await fetch(`/archived_pictures?page=${page}`);
+                const response = await fetch(`/stock_pictures?page=${page}`);
                 const images = await response.json();
-
+                
                 galleryLoadingOverlay.style.display = 'none';
                 isLoading = false;
 
@@ -47,7 +47,7 @@
                     const thumb = document.createElement('div');
                     thumb.classList.add('thumbnail');
                     const img = new Image();
-                    img.src = `/archived_thumbnails/${imageData.thumbnail_filename}?t=${new Date().getTime()}`;
+                    img.src = `/stock_thumbnails/${imageData.thumbnail_filename}?t=${new Date().getTime()}`;
                     img.alt = imageData.original_filename;
                     
                     thumb.innerHTML = `<div class="move-back-btn" data-filename="${imageData.original_filename}">&#x21B6;</div>`;
@@ -57,7 +57,7 @@
                 page++;
                 return true; // Images were loaded
             } catch (error) {
-                console.error('Failed to load archived images:', error);
+                console.error('Failed to load stock images:', error);
                 galleryLoadingOverlay.style.display = 'none';
                 isLoading = false;
                 return false;
@@ -65,9 +65,9 @@
         }
 
         async function initialLoad() {
-            let loadedImages = await loadArchivedImages();
+            let loadedImages = await loadStockImages();
             while (loadedImages && gallery.scrollHeight <= window.innerHeight) {
-                loadedImages = await loadArchivedImages();
+                loadedImages = await loadStockImages();
             }
         }
 
@@ -76,7 +76,7 @@
                 return;
             }
             const filename = event.target.dataset.filename;
-            fetch('/move_from_archive', {
+            fetch('/move_from_stocks', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ filename: filename }),
@@ -108,7 +108,7 @@
         function setupObserver() {
             observer = new IntersectionObserver(entries => {
                 if (entries[0].isIntersecting && !isLoading) {
-                    loadArchivedImages();
+                    loadStockImages();
                 }
             }, { rootMargin: '200px' }); // Trigger before the sentinel is visible
             observer.observe(sentinel);

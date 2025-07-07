@@ -34,7 +34,7 @@ body {
     display: inline-block;
 }
 
-#view-archived-btn {
+#view-archived-btn, #view-stocks-btn {
     background-color: transparent;
     color: #333;
     padding: 0 10px;
@@ -49,6 +49,7 @@ body {
     box-sizing: border-box;
     text-align: center;
     display: inline-block;
+    margin-left: 10px;
 }
 
 .back-arrow {
